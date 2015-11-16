@@ -1,0 +1,21 @@
+#!/bin/sh
+
+supported_types=".docx .pdf"
+input="$1"
+output_type="$2"
+
+is_supported() {
+  for word in $supported_types; do
+    [ "$word" = "$1" ] && return 0
+  done
+  return 1
+}
+
+if ! is_supported "$output_type"; then
+    printf "The type: %s is not supported.\n Please choose on of\n   %s\n" "$output_type" "$supported_types" 
+    exit 1
+fi
+
+output="$(dirname $input)/$(basename $input .md)$output_type"
+
+pandoc -S -s -o "$output" --template "/home/tant/texmf/tex/latex/tant/templates/mytemplate.latex" -V numbersections=true "$input"

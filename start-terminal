@@ -1,0 +1,15 @@
+#!/bin/sh
+
+/home/tant/bin/terminal-desktop --layout=Desktop&
+term_pid=$!
+
+for i in 1 2 3 4 5
+do 
+    term_wid=$(wmctrl -lp| awk -v pid="$term_pid" '$3 == pid { print $1 }')
+    if [ "$term_wid" != "" ] ; then
+        break;
+    fi
+    sleep 1
+done
+
+printf "%s %s\n" "$term_pid" "$term_wid" > /tmp/terminal-desktop

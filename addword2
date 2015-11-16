@@ -1,0 +1,30 @@
+#!/bin/zsh
+
+#add words to the vim dictionary
+addword() {
+    echo $#
+    if [ $# -lt 2 ]; then
+		printf "%s <dictionary> <word> [<word> ...]\n" "$0"
+		return 1
+    fi
+	dic_path=~/.vim/spell/"$1"
+    if [ ! -f "$dic_path" ]; then
+		printf "%s\n" "$dic_path is not a file"
+		return 2
+	fi
+	tmp_file=$(mktemp "/tmp/addword_XXXXXXXX")
+	for i in {2..$#}
+	do
+        printf "%s\n" "$2" >> "$dic_path"
+		shift
+	done
+	sort "$dic_path" | uniq > "$tmp_file" &&
+	mv "$tmp_file" "$dic_path"
+	if [ -e "$tmp_file" ]; then
+		rm "$tmp_file"
+		printf "Could not write to %s\n" "$dic_path"
+        return 3
+	fi
+    wc "$dic_path"
+}
+addword "$@"

@@ -1,0 +1,36 @@
+#!/bin/sh
+
+# contains(string, substring)
+#
+# Returns 0 if the specified string contains the specified substring,
+# otherwise returns 1.
+not_contains() {
+    string="$1"
+    substring="$2"
+    test "${string#*$substring}" = "$string"
+    return $?
+}
+
+error_send() {
+    title=$1
+    message=$2
+    /usr/bin/notify-send "$title" "$message" -i /usr/share/icons/hicolor/scalable/apps/terminator.svg
+}
+
+read term_pid term_wid < /tmp/terminal-desktop
+
+#get the command from pid
+command=$(ps -o command -p $term_pid| tail -n +2 )
+
+#test if the command is a terminal-desktop
+if not_contains "$command" "terminal-desktop"; then
+    error_send "Could not find terminal process" "PID=$term_pid is not a terminal desktop\n"
+    exit 1
+fi
+
+if ! wmctrl -iR "$term_wid"; then
+    error_send "Could not find terminal Window" "WID=$term_wid is not a valid window"
+    exit 2
+fi
+
+
