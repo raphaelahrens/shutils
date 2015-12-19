@@ -4,10 +4,19 @@ import argparse
 import os.path
 import pathlib
 import re
+import sys
 
 
 DICT_PATH = pathlib.Path(os.path.expanduser('~/.vim/spell/'))
 SPELL_REGEX = re.compile(r'[^\.]*')
+
+
+class Exit(Exception):
+    def __init__(self, code, value):
+        self.code = code
+        self.value = value
+    def __str__(self):
+        return '{} Code: {} '.format(repr(self.value), self.code)
 
 
 def read_words(dict_path):
@@ -21,11 +30,17 @@ def read_words(dict_path):
 def write_words(dict_path, word_set):
     with dict_path.open('w') as dictionary:
         for word in sorted(word_set):
-            dictionary.write(word+'\n')
+            print(word, file=dictionary)
+            #dictionary.write(word+'\n')
+    with get_path('.last-spell').open('w') as last:
+        print(str(dict_path), file=last)
 
 
 def get_path(name):
-    return DICT_PATH.joinpath(name)
+    path = DICT_PATH.joinpath(name)
+    if not path.is_file():
+        raise Exit(3, 'The dictionary "{}" doesn\'t point to a file under {} '.format(name, path))
+    return path
 
 
 def print_stats(old_words, new_words, merged_words):
@@ -40,7 +55,12 @@ def choose_dictionary():
     files = [child.name for child in DICT_PATH.iterdir() if SPELL_REGEX.fullmatch(child.name)]
     for n, f in enumerate(files):
         print('{:>} {}'.format(n, f))
-    choice = int(input(':'))
+    input_value = input(':')
+    if not input_value.isdigit():
+        raise Exit(1, 'Input needs to be a positive number')
+    choice = int(input_value)
+    if not 0 <= choice < len(files):
+        raise Exit(2, 'Input needs to be a number between 0 and {}'.format(len(files)-1))
     return files[choice]
 
 
@@ -49,18 +69,29 @@ def main():
     parser.add_argument('--choose', action='store_true')
     args, rest = parser.parse_known_args()
     if args.choose:
-        rest.insert(0, choose_dictionary())
+        try:
+            choice = choose_dictionary()
+        except Exit as exit:
+            print(exit.value, file=sys.stderr)
+            return exit.code
 
+        rest.insert(0, choice)
     parser.add_argument('dictionary', help='dictionary file')
     parser.add_argument('words', nargs='*', help='words that will be added')
     args = parser.parse_args(rest)
-    path = get_path(args.dictionary)
+    try:
+        path = get_path(args.dictionary)
+    except Exit as exit:
+        print(exit.value, file=sys.stderr)
+        return exit.code
+
     old_words = read_words(path)
     new_words = set(args.words)
     merged_words = old_words | new_words
     write_words(path, merged_words)
     print_stats(old_words, new_words, merged_words)
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
