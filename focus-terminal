@@ -12,15 +12,33 @@ not_contains() {
 }
 
 error_send() {
-    title=$1
-    message=$2
+    title="$1"
+    message="$2"
     /usr/bin/notify-send "$title" "$message" -i /usr/share/icons/hicolor/scalable/apps/terminator.svg
 }
 
-read term_pid term_wid < /tmp/terminal-desktop
+is_focused() {
+    term_wid="$1"
+    focused_wid="$(xprop -root 32x '\t$0' _NET_ACTIVE_WINDOW | cut -f 2)"
+    echo "$term_wid" = "$focused_wid"
+    test $(( term_wid )) -eq $(( focused_wid ))
+    return $?
+}
+
+toggle_focus() {
+    term_wid=$1
+    if is_focused "$term_wid"; then
+        wmctrl -ir "$term_wid" -b add,hidden
+    else
+        wmctrl -ir "$term_wid" -b remove,hidden
+        wmctrl -iR "$term_wid"
+    fi
+}
+
+read -r term_pid term_wid < /tmp/terminal-desktop
 
 #get the command from pid
-command=$(ps -o command -p $term_pid| tail -n +2 )
+command=$(ps -o command -p "$term_pid"| tail -n +2 )
 
 #test if the command is a terminal-desktop
 if not_contains "$command" "terminal-desktop"; then
