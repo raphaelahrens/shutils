@@ -7,8 +7,8 @@ import re
 import sys
 
 
-DICT_PATH = pathlib.Path(os.path.expanduser('~/.vim/spell/'))
-SPELL_REGEX = re.compile(r'[^\.]*')
+DICT_PATH = pathlib.Path(os.path.expanduser('~/.config/nvim/pack/minpac/start/raspell/spell'))
+SPELL_REGEX = re.compile(r'[a-z][^\.]*')
 
 
 class Exit(Exception):
@@ -31,8 +31,9 @@ def write_words(dict_path, word_set):
     with dict_path.open('w') as dictionary:
         for word in sorted(word_set):
             print(word, file=dictionary)
-            #dictionary.write(word+'\n')
-    with get_path('.last-spell').open('w') as last:
+    # Note which dictionary was edited so that vim can do its mkspell magic
+    last_spell = DICT_PATH.joinpath('.last-spell')
+    with last_spell.open('w') as last:
         print(str(dict_path), file=last)
 
 
@@ -50,12 +51,27 @@ def print_stats(old_words, new_words, merged_words):
     print(header_str)
     print(out_str)
 
+def create_new_dictionary():
+    file_name = input('Enter name:')
+    if not SPELL_REGEX.fullmatch(file_name):
+        raise Exit(3, 'Invalid dictionary name')
+    DICT_PATH.joinpath(file_name).touch()
+    return file_name
+
+
 
 def choose_dictionary():
     files = [child.name for child in DICT_PATH.iterdir() if SPELL_REGEX.fullmatch(child.name)]
+    files.sort()
+    print('  x | QUIT')
+    print('  n | NEW')
     for n, f in enumerate(files):
-        print('{:>} {}'.format(n, f))
+        print('{:>3} | {}'.format(n, f))
     input_value = input(':')
+    if input_value == 'x':
+        raise Exit(0, 'Ok, Bye!')
+    if input_value == 'n':
+        return create_new_dictionary()
     if not input_value.isdigit():
         raise Exit(1, 'Input needs to be a positive number')
     choice = int(input_value)
