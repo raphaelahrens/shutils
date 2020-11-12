@@ -1,0 +1,40 @@
+#!/usr/bin/env zsh
+
+BROWSER=/usr/bin/firefox
+
+TMP_PATH="$HOME/.local/tmp/ff/"
+
+usage() {
+    cat <<usage
+Usage: browser
+       pipe html to a browser
+$ echo '<h1>hi mom!</h1>' | browser
+$ ron -5 man/rip.5.ron | browser
+usage
+}
+
+clean() {
+    rm -r $TMP_PATH || true
+    mkdir -p $TMP_PATH
+}
+
+
+main () {
+    if [[ -t 0 ]]; then
+      if [[ -n "$1" ]]; then
+        $BROWSER $1
+        exit 0
+      else
+        usage
+        exit 0
+      fi
+    fi
+
+    clean
+
+    f=$(mktemp "$TMP_PATH/XXXXXXXXXXXXXXXXX.html")
+    cat > $f
+    $BROWSER $f
+}
+
+main "$@"
