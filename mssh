@@ -1,0 +1,21 @@
+#!/bin/sh
+
+tmux_split() {
+    read -r i;
+    tmux new-window ssh "$i"
+    while read -r i; do
+        tmux split-window -h ssh "$i";
+        tmux select-layout tiled;
+    done
+    tmux select-pane -t 0
+    tmux set-window-option synchronize-panes on > /dev/null
+}
+
+main() {
+    file=$1
+
+    tmux_split < "$file"
+
+}
+
+main "$@"
