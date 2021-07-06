@@ -7,7 +7,7 @@ import re
 import sys
 
 
-DICT_PATH = pathlib.Path(os.path.expanduser('~/.config/nvim/pack/minpac/start/raspell/spell'))
+DICT_PATH = pathlib.Path(os.path.expanduser('~/.config/nvim/pack/default/start/spell/spell'))
 SPELL_REGEX = re.compile(r'[a-z][^\.]*')
 
 
